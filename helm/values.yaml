@@ -1,0 +1,52 @@
+namespace: default
+
+application:
+  name: fast-n-foodious-ms-produto
+  image: ottero/fast-n-foodious-ms-produto:latest
+  resources:
+    limits:
+      memory: "768Mi"
+      cpu: "500m"
+
+service:
+  loadbalancer:
+    port: 80
+
+mysql:
+  name: mysql
+  image: mysql:8.0
+  resources:
+    limits:
+      memory: "768Mi"
+      cpu: "500m"
+
+configMap:
+  data:
+    NODE_ENV: prod
+    MYSQL_HOST: mysql
+    MYSQL_USER: fnf_user
+
+hpa:
+  minReplicas: 1
+  maxReplicas: 3
+  cpu:
+    averageUtilization: 70
+  memory:
+    averageUtilization: 70
+
+pv:
+  name: fast-n-foodious-pv
+  storage: 500Mi
+  hostPath: /Users/renatorodrigues/mysql
+
+pvc:
+  name: fast-n-foodious-pvc
+  requests:
+      storage: 300Mi
+
+storageClassName: fast-n-foodious-storage
+
+secret:
+  data:
+    MYSQL_PASSWORD: Zm5mX3Bhc3M=
+    MYSQL_ROOT_PASSWORD: Zm5mX3Bhc3M=

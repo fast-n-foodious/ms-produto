@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# Configura para usar o repositorio mockado
+setNodeEnvToMock() {
+    NODE_ENV_CURRENT=${NODE_ENV}
+    export NODE_ENV='local-mock-repository'
+}
+# Restaura os valores originais
+restoreNodeEnv() {
+  export NODE_ENV=${NODE_ENV_CURRENT}
+  unset NODE_ENV_CURRENT
+}
+
+# Função para centralizar a mensagem e exibir em uma caixa
+displayBoxedMessage() {
+  message=$1
+  total_width=80  # Largura total da caixa
+  padding=3       # Espaço de preenchimento entre a mensagem e as bordas
+
+  # Ajusta a mensagem para ter o mesmo comprimento total
+  message=$(printf "%-${total_width}s" "$message")
+
+  # Gera a linha superior da caixa
+  echo "╔$(printf '═%.0s' $(seq 1 $((total_width - 3))))╗"
+
+  # Gera a linha com a mensagem centralizada
+  echo "║$(printf "%-${total_width}s" "$message")║"
+
+  # Gera a linha inferior da caixa
+  echo "╚$(printf '═%.0s' $(seq 1 $((total_width - 3))))╝"
+}
+
+# Termina o programa, retornando a mensagem e status
+exitWithMessage() {
+  message=$1
+  status=$2
+  displayBoxedMessage "$message"
+  restoreNodeEnv
+  exit $status
+}
+
+setNodeEnvToMock
+
+# Executa os testes unitarios
+echo " 🚀 Executando testes unitários.."
+npm run test
+testStatus=$?
+
+# Executa lint
+echo " 🚀 Executando Lint.."
+npm run lint
+
+# Verifica se os testes unitário falharam
+if [ $testStatus -ne 0 ]; then
+  exitWithMessage " 🚨 Testes unitários falharam. Abortando o commit." 1 
+fi
+
+# Verifica cobertura de testes
+echo " 🚀 Verificando cobertura de testes unitários.."
+npm run test:cov
+coverageStatus=$?
+
+# Verifica se a cobertura de teste atende os threasholds
+if [ $coverageStatus -ne 0 ]; then
+  exitWithMessage " 🚨 Cobertura de testes unitários insuficientes. Abortando o commit." 1
+fi
+
+exitWithMessage " ✅ Validação pre-commit finalizada com sucesso" 0
